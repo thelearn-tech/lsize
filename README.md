@@ -66,6 +66,11 @@ Running `lsize` on this dir.
 
 ![lsize demo on dir tree](.repo/lsize-demo.png)
 
+## Changelog
+
+See the [CHANGELOG](CHANGELOG.md) for release notes and changes.
+
+
 ## Contributing
 
 Contributions are welcome! Please open an issue or submit a pull request.
