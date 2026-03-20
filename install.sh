@@ -1,6 +1,6 @@
 #!/bin/bash
 
-_VERSION='0.1'
+_VERSION='0.2'
 
 BIN_DIR="$HOME/.local/bin"
 
@@ -14,21 +14,47 @@ orange="\e[1;38;5;214m"
 blue="\e[1;34m"
 default="\e[0m"
 
-if [ ! -d $BIN_DIR ]; 
+if [ -f $BIN_DIR/lsize ]
 then
-  echo -e "$default $0:$green Created $BIN_DIR..."
+  echo -e "$blue $(lsize -v) already exist..$default"
+  read -p " Do you want to update [y/n] : " update
+  if [[ $update == 'y' ]]
+  then 
+    cp lsize.py $BIN_DIR/lsize
+    chmod +x $BIN_DIR/lsize
+    echo -e "$cyan Update Finished : $($BIN_DIR/lsize -v) $default"
+  fi
+  exit
 fi
 
 
-echo -e "$default $0:$green Copying lsize to $BIN_DIR"
+# check if the ~/.local/bin exists else create the dir
+if [ ! -d "$BIN_DIR" ]
+then
+  sleep 2
+  if mkdir -p ~/.local/bin;
+  then
+    echo -e "$default $0:$green Created $BIN_DIR...$default"
+  else
+    echo -e "$default $0:$red Failed to create $BIN_DIR...$default"
+  fi
+fi
+
+
+
+echo -en "$default $0:$green Copying lsize to $BIN_DIR.........."
+
+sleep 2
 
 if cp lsize.py $BIN_DIR/lsize;
 then
-  echo -e "$default $0:$green Copying succesfull..."
+  echo -e "${green}Succesfull"
 else 
-  echo -e "$default $0:$red Copy failed! Exiting.."
+  echo -e "$default $0:$red Copy Failed! Exiting.."
   exit 1
 fi
+
+sleep 2
 
 if chmod +x $BIN_DIR/lsize;
 then
@@ -42,25 +68,30 @@ fi
 EXPORT_LINE='export PATH="$HOME/.local/bin:$PATH"'
 
 # 1. Add to current shell if missing
-if [[ ":$PATH:" != *":$BIN_DIR:"* ]]; then
+if [[ ":$PATH:" != *":$BIN_DIR:"* ]]
+then
   PATH="$BIN_DIR:$PATH"
 fi
 
 # 2. Decide which startup file to modify
-if shopt -q login_shell; then
-  TARGET="$HOME/.profile"
+if shopt -q login_shell;
+then
+  SOURCE_FILE="$HOME/.profile"
 else
-  TARGET="$HOME/.bashrc"
+  SOURCE_FILE="$HOME/.bashrc"
 fi
 
 # 3. Append only if file exists and line is not already present
-if [[ -f "$TARGET" ]]; then
-  grep -Fxq "$EXPORT_LINE" "$TARGET" || {
-    printf '\n# Added by lsize\n%s\n' "$EXPORT_LINE" >> "$TARGET"
+if [[ -f "$SOURCE_FILE" ]]
+then
+  grep -Fxq "$EXPORT_LINE" "$SOURCE_FILE" || {
+    printf '\n# Added by lsize\n%s\n' "$EXPORT_LINE" >> "$SOURCE_FILE"
   }
 fi
 
-source $TARGET
+source $SOURCE_FILE
+
+sleep 2
 
 if [[ ":$PATH:" == *":$HOME/.local/bin:"* ]];
 then
@@ -70,5 +101,7 @@ else
   exit 1
 fi
 
-echo -e "$cyan To get started type 'lsize -h'"
+sleep 2
+
+echo -e "$cyan To get started type 'lsize -h' $default"
 
