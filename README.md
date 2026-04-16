@@ -20,6 +20,7 @@ A Python CLI tool to calculate and display the total size of files and directori
 <img src="https://img.shields.io/badge/Linux-FCC624?logo=linux&logoColor=black" style="margin-right:6px;">
 <img src="https://img.shields.io/badge/Tested_on--lightgrey?style=flat-square" style="margin-left:12px;">
 <img src="https://img.shields.io/badge/Debian-A81D33?style=flat-square&logo=debian&logoColor=white" style="margin-right:6px;">
+<img src="https://img.shields.io/badge/Current_Version-v0.3-orange" style="margin-left:12px;">
 </p>
 
 ## Features

@@ -1,6 +1,6 @@
 # Changelog
 
-## [v0.2] -  3rd Mar 2026
+## [v0.2] -  3rd March 2026
 ### Added
 - Created `CHANGELOG.md` file to track updates.
   - **Affected files:**
@@ -17,3 +17,13 @@
   - **Affected files:**
     - `install.sh`
 
+## [v0.3] -  16th April 2026
+### Added
+- Add **--order** and **--sort-by** options to get formated ouptup by ascending/descending order and sorted by name,size
+  - **Affected files:**
+    - `lszie.py` 
+  
+### Added
+- Add ***Analyzing [/]*** animation for visual indication of progress.
+  - **Affected files:**
+    - `lszie.py` 

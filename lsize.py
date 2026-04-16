@@ -6,7 +6,7 @@ import argparse
 import textwrap
 
 
-_VERSION = 0.2
+_VERSION = 0.3
 
 class Color:
     DEFAULT = "\033[0m"
@@ -47,6 +47,18 @@ def parse_args():
         "--no-color",
         action="store_true",
         help="Disable colored output"
+    )
+    parser.add_argument(
+        "-o", "--order",
+        choices=["asc", "desc"],
+        default="asc",
+        help="Order in which the output will be displayed. default: asc."
+    )
+    parser.add_argument(    
+        "--sort-by",   
+        choices=["name", "size"],
+        default="size",
+        help="Based on which type the output will be displayed. default: size"
     )
     parser.add_argument(
         "--dir","-d",
@@ -97,7 +109,7 @@ def get_directory_size(path):
             fp = os.path.join(root, f)
             if os.path.isfile(fp):
                 total_size += os.path.getsize(fp)
-    return total_size # in bytes, int, int
+    return total_size # in bytes
 
 
 def format_size(bytes_val):
@@ -109,78 +121,94 @@ def format_size(bytes_val):
     return f"{bytes_val:.2f} PB"
 
 
-def print_size_colored(path,args):
+def print_sorted_output(data,path,args):
+    
+    
+    total_dir_size = 0
+    for value in data.values():
+        total_dir_size += value
 
-    print(f"\n{Color.GREEN}Analyzing: {Color.DEFAULT}{path.rstrip('/')}/ ")
-    main_size = get_directory_size(path)
-    print(f"{Color.BLUE}{path.rstrip('/')}/{Color.DEFAULT}: ", end='')
-    print(f"{Color.GREEN}{format_size(main_size)}{Color.DEFAULT} ", end='')
+    if args.no_color:
+        print(f'\r{path}: {format_size(total_dir_size)}              ')
+    else:
+        print(f'\r{Color.BLUE}{path}{Color.CYAN}: {Color.GREEN}{format_size(total_dir_size)}              ')
+
+    sorted_list_of_tuple = "will be changed"
+
+    if (args.order == "asc"):
+        if (args.sort_by == "size"):
+            sorted_list_of_tuple = sorted(data.items(), key=lambda kv: kv[1] ) # sorted dict by size asc
+        else: #name
+            sorted_list_of_tuple = sorted(data.items(), key=lambda kv: kv[0].lower()) #sorted dict by name asc
+    else: # desc
+        if (args.sort_by == "size"):
+            sorted_list_of_tuple = sorted(data.items(), key=lambda kv: kv[1], reverse=True) # sorted dict by size asc
+        else: #name
+            sorted_list_of_tuple = sorted(data.items(), key=lambda kv: kv[0].lower(), reverse=True) #sorted dict by name asc
+
+    lastKey = sorted_list_of_tuple[-1][0]
+    symbol_format = '├──'
+
+    if args.no_color:
+        for key,value in sorted_list_of_tuple:
+            if key == lastKey:
+                symbol_format = '└──'
+            else:
+                symbol_format = '├──'
+
+            print(f"{Color.DEFAULT}{symbol_format} {key} ({format_size(value)})")
+    else: #colored
+        for key,value in sorted_list_of_tuple:
+            if key == lastKey:
+                symbol_format = '└──'
+            else:
+                symbol_format = '├──'
+
+            if key.endswith('/'):
+                print(f"{Color.DEFAULT}{symbol_format} {Color.BLUE}{key} {Color.GREEN}({format_size(value)})")
+            else:
+                print(f"{Color.DEFAULT}{symbol_format} {key} ({Color.GREEN}{format_size(value)})")
+
+
+def build_dict(path,args):
+    dict_of_data = {}
+    spinner = ['|', '/', '-', '\\']
+    spinner_i = 0
 
     # Filter based on flags
     if args.dir and not args.file:  # only directories
-        print("(Subdirectory only)")
-        for entry in os.listdir(path):
+        for entry in os.listdir(path): 
             full_path = os.path.join(path, entry)
-            if os.path.isdir(full_path):
+            if os.path.isdir(full_path): #check for dir
                 sub_size = get_directory_size(full_path)
-                print(f"{Color.DEFAULT}├── {Color.BLUE}{entry}/ {Color.GREEN}({format_size(sub_size)})")
-    
+                print(f'\rAnalyzing: [{spinner[spinner_i % 4]}]', end='', flush=True)
+                spinner_i += 1
+                dict_of_data[entry + "/"] =  sub_size
+
     elif args.file and not args.dir:  # only files
-        print("(File only)")
         for entry in os.listdir(path):
             full_path = os.path.join(path, entry)
-            if os.path.isfile(full_path):
+            if os.path.isfile(full_path): # check for file
                 file_size = os.path.getsize(full_path)
-                print(f"{Color.DEFAULT}├── {entry} ({Color.GREEN}{format_size(file_size)})")
+                print(f'\rAnalyzing: [{spinner[spinner_i % 4]}]', end='', flush=True)
+                spinner_i += 1
+                dict_of_data[entry] =  file_size
     
-    else:  # show files and directories
-        print('')
+    else:  # files and directories
         for entry in os.listdir(path):
             full_path = os.path.join(path,  entry)
             if os.path.isdir(full_path):
                 sub_size = get_directory_size(full_path)
-                print(f"{Color.DEFAULT}├── {Color.BLUE}{entry}/ {Color.GREEN}({format_size(sub_size)})")
+                print(f'\rAnalyzing: [{spinner[spinner_i % 4]}]', end='', flush=True)
+                spinner_i += 1
+                dict_of_data[entry + "/"] =  sub_size
             elif os.path.isfile(full_path):
                 file_size = os.path.getsize(full_path)
-                print(f"{Color.DEFAULT}├── {entry} ({Color.GREEN}{format_size(file_size)})")
+                print(f'\rAnalyzing: [{spinner[spinner_i % 4]}]', end='', flush=True)
+                spinner_i += 1
+                dict_of_data[entry] =  file_size
 
-def print_size_no_color(path,args):
-
-    print(f"\nAnalyzing: {path.rstrip('/')}/ ")
-    
-    main_size = get_directory_size(path)
-    
-    print(f"{path.rstrip('/')}/: ", end='')
-    print(f"{format_size(main_size)} ", end='')
-
-    # Filter based on flags
-    if args.dir and not args.file:  # only directories
-        print("(Subdirectory only)")
-        for entry in os.listdir(path):
-            full_path = os.path.join(path, entry)
-            if os.path.isdir(full_path):
-                sub_size = get_directory_size(full_path)
-                print(f"{Color.DEFAULT}├── {entry}/ ({format_size(sub_size)})")
-    
-    elif args.file and not args.dir:  # only files
-        print("(File only)")
-        for entry in os.listdir(path):
-            full_path = os.path.join(path, entry)
-            if os.path.isfile(full_path):
-                file_size = os.path.getsize(full_path)
-                print(f"{Color.DEFAULT}├── {entry} ({format_size(file_size)})")
-    
-    else:  # show files and directories
-        print('')
-        for entry in os.listdir(path):
-            full_path = os.path.join(path,  entry)
-            if os.path.isdir(full_path):
-                sub_size = get_directory_size(full_path)
-                print(f"{Color.DEFAULT}├── {entry}/ ({format_size(sub_size)})")
-            elif os.path.isfile(full_path):
-                file_size = os.path.getsize(full_path)
-                print(f"{Color.DEFAULT}├── {entry} ({format_size(file_size)})")
-
+    return dict_of_data
 
 def main():
     args = parse_args()
@@ -212,19 +240,18 @@ def main():
             main_size,main_dir_count,main_file_count = get_directory_details(path)
 
             if args.no_color:
-                print(f"{path}/: {format_size(main_size)}")
-                print(f"├──── Directory's: {main_dir_count}")
-                print(f"├──── Files:     {main_file_count}\n")
+                print(f"{path}: {format_size(main_size)}")
+                print(f"├─ Directory's: {main_dir_count}")
+                print(f"└─ Files:     {main_file_count}\n")
             else:
-                print(f"{Color.BLUE}{path}/: {Color.GREEN}{format_size(main_size)}")
-                print(f"{Color.DEFAULT}├──── Directory's: {Color.GREEN}{main_dir_count}")
-                print(f"{Color.DEFAULT}├──── Files:     {Color.GREEN}{main_file_count}\n")
+                print(f"{Color.BLUE}{path}: {Color.GREEN}{format_size(main_size)}")
+                print(f"{Color.DEFAULT}├─ Directory's: {Color.GREEN}{main_dir_count}")
+                print(f"{Color.DEFAULT}└─ Files: {Color.GREEN}{main_file_count}\n")
             return
         else:
-            if args.no_color:
-                print_size_no_color(path,args)
-            else:
-                print_size_colored(path,args)
+            data = build_dict(path,args)
+            print_sorted_output(data,path,args)
+
     else:
 
         if args.no_color:
